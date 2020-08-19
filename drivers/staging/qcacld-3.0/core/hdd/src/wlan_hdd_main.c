@@ -13671,7 +13671,9 @@ int hdd_init(void)
 
 	hdd_trace_init();
 	hdd_register_debug_callback();
+#ifdef FEATURE_ROAM_DEBUG
 	wlan_roam_debug_init();
+#endif
 
 	return 0;
 }
@@ -13685,7 +13687,9 @@ int hdd_init(void)
  */
 void hdd_deinit(void)
 {
+#ifdef FEATURE_ROAM_DEBUG
 	wlan_roam_debug_deinit();
+#endif
 
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
 	wlan_logging_sock_deinit_svc();
