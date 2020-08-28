@@ -5401,6 +5401,7 @@ static struct snd_soc_ops msm_mi2s_cs35l41_be_ops = {
 };
 #endif
 
+#ifndef CONFIG_MACH_XIAOMI_LMI
 static int cs35l41_init(struct snd_soc_pcm_runtime *rtd)
 {
 #if 0
@@ -5436,6 +5437,7 @@ static int cs35l41_init(struct snd_soc_pcm_runtime *rtd)
 #endif
 	return 0;
 }
+#endif
 
 
 static struct snd_soc_ops msm_fe_qos_ops = {
@@ -7036,6 +7038,7 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 	},
 };
 
+#ifndef CONFIG_MACH_XIAOMI_LMI
 static struct snd_soc_dai_link tert_mi2s_rx_cs35l41_dai_links[] = {
 #if defined(CONFIG_TARGET_PRODUCT_CAS)
 	{
@@ -7089,6 +7092,7 @@ static struct snd_soc_dai_link tert_mi2s_rx_cs35l41_dai_links[] = {
 	},
 #endif
 };
+#endif
 
 static struct snd_soc_dai_link pri_mi2s_rx_tfa9874_dai_links[] = {
 	{
@@ -7501,7 +7505,9 @@ static struct snd_soc_dai_link msm_kona_dai_links[
 			ARRAY_SIZE(msm_common_misc_fe_dai_links) +
 			ARRAY_SIZE(msm_common_be_dai_links) +
 			ARRAY_SIZE(msm_mi2s_be_dai_links) +
+#ifndef CONFIG_MACH_XIAOMI_LMI
 			ARRAY_SIZE(tert_mi2s_rx_cs35l41_dai_links) +
+#endif
 			ARRAY_SIZE(pri_mi2s_rx_tfa9874_dai_links) +
 			ARRAY_SIZE(msm_auxpcm_be_dai_links) +
 			ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links) +
@@ -7798,21 +7804,19 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				total_links +=
 					ARRAY_SIZE(msm_mi2s_be_dai_links);
 
-				if (get_hw_version_platform() == HARDWARE_PLATFORM_UMI ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_CMI ||
-					get_hw_version_platform() == HARDWARE_PLATFORM_CAS) {
+#ifndef CONFIG_MACH_XIAOMI_LMI
 					memcpy(msm_kona_dai_links + total_links,
 						tert_mi2s_rx_cs35l41_dai_links,
 						sizeof(tert_mi2s_rx_cs35l41_dai_links));
 					total_links += ARRAY_SIZE(tert_mi2s_rx_cs35l41_dai_links);
 					dev_info(dev, "%s: Using tert_mi2s_rx_cs35l41_dai_links\n", __func__);
-				} else if (get_hw_version_platform() == HARDWARE_PLATFORM_LMI) {
+#else
 					memcpy(msm_kona_dai_links + total_links,
 						pri_mi2s_rx_tfa9874_dai_links,
 						sizeof(pri_mi2s_rx_tfa9874_dai_links));
 					total_links += ARRAY_SIZE(pri_mi2s_rx_tfa9874_dai_links);
 					dev_info(dev, "%s: Using pri_mi2s_rx_tfa9874_dai_links\n", __func__);
-				}
+#endif
 			}
 		}
 
