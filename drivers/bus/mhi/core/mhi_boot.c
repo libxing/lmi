@@ -432,6 +432,8 @@ void mhi_free_bhie_table(struct mhi_controller *mhi_cntrl,
 {
 	int i;
 	struct mhi_buf *mhi_buf = image_info->mhi_buf;
+	if (mhi_cntrl->img_pre_alloc)
+		return;
 
 	for (i = 0; i < image_info->entries; i++, mhi_buf++)
 		mhi_free_contig_coherent(mhi_cntrl, mhi_buf->len, mhi_buf->buf,
@@ -451,6 +453,9 @@ int mhi_alloc_bhie_table(struct mhi_controller *mhi_cntrl,
 	int i;
 	struct image_info *img_info;
 	struct mhi_buf *mhi_buf;
+
+	if (mhi_cntrl->img_pre_alloc)
+		return 0;
 
 	MHI_CNTRL_LOG("Allocating bytes:%zu seg_size:%zu total_seg:%u\n",
 			alloc_size, seg_size, segments);
