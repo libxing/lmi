@@ -207,6 +207,25 @@ static unsigned int dev_num = 1;
 static struct cdev wlan_hdd_state_cdev;
 static struct class *class;
 static dev_t device;
+static struct gwlan_loader *wlan_loader;
+
+struct gwlan_loader {
+	bool loaded_state;
+	struct kobject *boot_wlan_obj;
+	struct attribute_group *attr_group;
+};
+
+static ssize_t wlan_boot_cb_fake(struct kobject *kobj,
+			    struct kobj_attribute *attr,
+			    const char *buf, size_t count);
+
+static struct kobj_attribute wlan_boot_attribute =
+	__ATTR(boot_wlan, 0220, NULL, wlan_boot_cb_fake);
+
+static struct attribute *attrs[] = {
+	&wlan_boot_attribute.attr,
+	NULL,
+};
 
 /* the Android framework expects this param even though we don't use it */
 #define BUF_LEN 20
@@ -14698,6 +14717,24 @@ static void hdd_driver_unload(void)
 }
 
 /**
+ * wlan_boot_cb_fake() - Fake wlan boot callback
+ * @kobj:      object whose directory we're creating the link in.
+ * @attr:      yes you are going to read this
+ * @buff:      oh I see you reading this
+ * @count:     this is fake function you know
+ *
+ * just return count for the sake of it.
+ *
+ */
+static ssize_t wlan_boot_cb_fake(struct kobject *kobj,
+			    struct kobj_attribute *attr,
+			    const char *buf,
+			    size_t count)
+{
+	return count;
+}
+
+/**
  * hdd_module_init() - Module init helper
  *
  * Module init helper function used by both module and static driver.
@@ -14706,10 +14743,36 @@ static void hdd_driver_unload(void)
  */
 static int hdd_module_init(void)
 {
-	if (hdd_driver_load())
-		return -EINVAL;
+	int ret = -ENOMEM;
 
-	return 0;
+	wlan_loader = kzalloc(sizeof(*wlan_loader), GFP_KERNEL);
+	if (!wlan_loader)
+		goto hdd_init;
+
+	wlan_loader->boot_wlan_obj = NULL;
+	wlan_loader->attr_group = kzalloc(sizeof(*(wlan_loader->attr_group)),
+					  GFP_KERNEL);
+	if (!wlan_loader->attr_group)
+		goto hdd_init;
+
+	wlan_loader->attr_group->attrs = attrs;
+
+	wlan_loader->boot_wlan_obj = kobject_create_and_add("boot_wlan",
+							    kernel_kobj);
+	if (!wlan_loader->boot_wlan_obj) {
+		pr_err("%s: sysfs create and add failed\n", __func__);
+		goto hdd_init;
+	}
+
+	ret = sysfs_create_group(wlan_loader->boot_wlan_obj,
+				 wlan_loader->attr_group);
+	if (ret) {
+		pr_err("%s: sysfs create group failed; errno: %d\n", __func__, ret);
+		goto hdd_init;
+	}
+
+hdd_init:
+	return hdd_driver_load() ? -EINVAL : 0;
 }
 
 /**
