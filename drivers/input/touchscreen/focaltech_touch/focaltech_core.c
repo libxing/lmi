@@ -746,7 +746,7 @@ static int fts_read_and_report_foddata(struct fts_ts_data *data)
 					return 0;
 				}
 				if (!data->suspended) {
-					pr_info("FTS:touch is not in suspend state, report x,y value by touch nomal report\n");
+					pr_debug("FTS:touch is not in suspend state, report x,y value by touch nomal report\n");
 					mutex_unlock(&data->report_mutex);
 					return -EINVAL;
 				}
@@ -774,7 +774,7 @@ static int fts_read_and_report_foddata(struct fts_ts_data *data)
 				/* data->overlap_area = 0; */
 				fod_overlap_aera = 0;
 				if (!data->suspended) {
-					pr_info("FTS:touch is not in suspend state, report x,y value by touch nomal report\n");
+					pr_debug("FTS:touch is not in suspend state, report x,y value by touch nomal report\n");
 					return -EINVAL;
 				}
 				mutex_lock(&data->report_mutex);
