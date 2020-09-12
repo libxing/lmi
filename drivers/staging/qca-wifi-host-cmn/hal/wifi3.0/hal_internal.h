@@ -205,6 +205,7 @@ struct hal_reg_write_q_elem {
 	uint8_t valid;
 	qdf_time_t enqueue_time;
 	qdf_time_t dequeue_time;
+	qdf_time_t work_scheduled_time;
 };
 
 /**
