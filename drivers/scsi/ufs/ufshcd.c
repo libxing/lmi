@@ -8294,15 +8294,6 @@ static int ufshcd_reset_and_restore(struct ufs_hba *hba)
 	 */
 	BUG_ON(err && ufshcd_is_embedded_dev(hba));
 
-	/*
-	 * After reset the door-bell might be cleared, complete
-	 * outstanding requests in s/w here.
-	 */
-	ufs_spin_lock_irqsave(hba->host->host_lock, flags);
-	ufshcd_transfer_req_compl(hba);
-	ufshcd_tmc_handler(hba);
-	ufs_spin_unlock_irqrestore(hba->host->host_lock, flags);
-
 	return err;
 }
 
