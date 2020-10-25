@@ -1066,7 +1066,7 @@ static int tmc_etr_fill_usb_bam_data(struct tmc_drvdata *drvdata)
 		data_fifo_iova = dma_map_resource(drvdata->dev,
 			bamdata->data_fifo.phys_base, bamdata->data_fifo.size,
 			DMA_BIDIRECTIONAL, 0);
-		if (!data_fifo_iova)
+		if (dma_mapping_error(drvdata->dev, data_fifo_iova))
 			return -ENOMEM;
 		dev_dbg(drvdata->dev, "%s:data p_addr:%pa,iova:%pad,size:%x\n",
 			__func__, &(bamdata->data_fifo.phys_base),
@@ -1075,7 +1075,7 @@ static int tmc_etr_fill_usb_bam_data(struct tmc_drvdata *drvdata)
 		desc_fifo_iova = dma_map_resource(drvdata->dev,
 			bamdata->desc_fifo.phys_base, bamdata->desc_fifo.size,
 			DMA_BIDIRECTIONAL, 0);
-		if (!desc_fifo_iova)
+		if (dma_mapping_error(drvdata->dev, desc_fifo_iova))
 			return -ENOMEM;
 		dev_dbg(drvdata->dev, "%s:desc p_addr:%pa,iova:%pad,size:%x\n",
 			__func__, &(bamdata->desc_fifo.phys_base),
@@ -1147,7 +1147,7 @@ static int get_usb_bam_iova(struct device *dev, unsigned long usb_bam_handle,
 		return ret;
 	}
 	*iova = dma_map_resource(dev, p_addr, bam_size, DMA_BIDIRECTIONAL, 0);
-	if (!(*iova))
+	if (dma_mapping_error(dev, *iova))
 		return -ENOMEM;
 	return 0;
 }
@@ -1622,15 +1622,19 @@ int tmc_read_prepare_etr(struct tmc_drvdata *drvdata)
 		goto out;
 	}
 
-	/* Disable the TMC if need be */
+	drvdata->reading = true;
+
+	/* Disable the TMC if we are trying to read from a running session */
 	if (drvdata->mode == CS_MODE_SYSFS) {
 		spin_unlock_irqrestore(&drvdata->spinlock, flags);
+		mutex_unlock(&drvdata->mem_lock);
 		coresight_disable_all_source_link();
+		mutex_lock(&drvdata->mem_lock);
 		spin_lock_irqsave(&drvdata->spinlock, flags);
 
 		tmc_etr_disable_hw(drvdata);
 	}
-	drvdata->reading = true;
+
 out:
 	spin_unlock_irqrestore(&drvdata->spinlock, flags);
 	mutex_unlock(&drvdata->mem_lock);
@@ -1658,10 +1662,6 @@ int tmc_read_unprepare_etr(struct tmc_drvdata *drvdata)
 		 * be NULL.
 		 */
 		tmc_etr_enable_hw(drvdata);
-
-		spin_unlock_irqrestore(&drvdata->spinlock, flags);
-		coresight_enable_all_source_link();
-		spin_lock_irqsave(&drvdata->spinlock, flags);
 	} else {
 		/*
 		 * The ETR is not tracing and the buffer was just read.
@@ -1678,5 +1678,9 @@ int tmc_read_unprepare_etr(struct tmc_drvdata *drvdata)
 		tmc_free_etr_buf(etr_buf);
 
 	mutex_unlock(&drvdata->mem_lock);
+
+	if (drvdata->mode == CS_MODE_SYSFS)
+		coresight_enable_all_source_link();
+
 	return 0;
 }
