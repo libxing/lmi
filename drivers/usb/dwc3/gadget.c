@@ -1273,7 +1273,6 @@ static void dwc3_prepare_one_trb_sg(struct dwc3_ep *dep,
 	struct scatterlist *sg = req->start_sg;
 	struct scatterlist *s;
 	int		i;
-
 	unsigned int remaining = req->request.num_mapped_sgs
 		- req->num_queued_sgs;
 
