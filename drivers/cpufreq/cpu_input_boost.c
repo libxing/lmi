@@ -328,15 +328,11 @@ static int msm_drm_notifier_cb(struct notifier_block *nb, unsigned long action,
 
 	/* Boost when the screen turns on and unboost when it turns off */
 	if (*blank == MSM_DRM_BLANK_UNBLANK_CUST) {
-		set_bit(SCREEN_ON, &b->state);
-		is_screen_on = true;
-		do_cpu_updown(true);
+		clear_bit(SCREEN_OFF, &b->state);
 		__cpu_input_boost_kick_max(b, wake_boost_duration);
-	} else if (*blank == MSM_DRM_BLANK_POWERDOWN_CUST) {
-		clear_bit(SCREEN_ON, &b->state);
-		is_screen_on = false;
+	} else {
+		set_bit(SCREEN_OFF, &b->state);
 		wake_up(&b->boost_waitq);
-		do_cpu_updown(false);
 	}
 
 	return NOTIFY_OK;
